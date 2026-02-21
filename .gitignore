@@ -1,0 +1,6 @@
+*.exe
+*.pdb
+venv/
+__pycache__/
+*.pyc
+.claude/
