@@ -18,10 +18,12 @@ class TrayCharger : ApplicationContext
     const string APP_NAME = "TrayCharger";
     const int ICON_SIZE = 256;
     const int REFRESH_MS = 3000;
+    const float MAX_WATTS = 200f;   // 이 이상은 스파이크로 간주
 
     NotifyIcon _tray;
     System.Windows.Forms.Timer _timer;
     string _batteryPath;
+    Reading _lastValid;
 
     // ═══════════════════════════════════════════════════════
     //  P/Invoke
@@ -369,6 +371,26 @@ class TrayCharger : ApplicationContext
     void OnTick(object sender, EventArgs e)
     {
         Reading r = ReadBattery();
+
+        // 충전기 연결/분리 순간 API가 비정상 값을 반환 → 이전 유효값 사용
+        if (r.Ok && Math.Abs(r.Watts) > MAX_WATTS)
+        {
+            if (_lastValid.Ok)
+            {
+                r.Watts = _lastValid.Watts;
+                r.Amps  = _lastValid.Amps;
+                r.Volts = _lastValid.Volts;
+            }
+            else
+            {
+                r.Watts = 0;
+                r.Amps  = 0;
+            }
+        }
+
+        if (r.Ok)
+            _lastValid = r;
+
         Icon newIcon;
         string tip;
 
